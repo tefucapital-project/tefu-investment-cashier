@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Banner, Button, Empty, Loading, Panel, SelectField, StatusPill, TextArea, TextField } from "../components/ui";
 import { useCashier } from "../context/CashierState";
-import { api, money } from "../lib/api";
+import { api, money, uid } from "../lib/api";
 
 export function DepositPage() {
   const [params] = useSearchParams();
@@ -15,6 +15,7 @@ export function DepositPage() {
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
   const [busy, setBusy] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => uid());
 
   return (
     <Panel title="Record deposit">
@@ -31,6 +32,7 @@ export function DepositPage() {
           try {
             const result = await api<{ reference: string }>("/deposits", {
               method: "POST",
+              idempotencyKey,
               body: JSON.stringify({
                 customerId: customerId || undefined,
                 amount: Number(amount),
@@ -43,6 +45,7 @@ export function DepositPage() {
             setAmount("");
             setExternalReference("");
             setNote("");
+            setIdempotencyKey(uid());
           } catch (err) {
             setError(err instanceof Error ? err.message : "Deposit failed.");
           } finally {
